@@ -1,18 +1,36 @@
-const BASE = process.env.REACT_APP_API_URL || '/api';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const data = error.response?.data || {};
+    const message =
+      data.message ||
+      (error.request ? 'Không thể kết nối tới máy chủ' : error.message);
+    return Promise.reject(Object.assign(new Error(message), { status, data }));
+  }
+);
 
 const request = async (path, { method = 'GET', body } = {}) => {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.message || 'Lỗi'), { status: res.status, data });
-  return data;
+  const response = await api.request({ url: path, method, data: body });
+  return response.data;
 };
 
-export default request;
+export default request; 
