@@ -20,7 +20,7 @@ Client: http://localhost:3000 – Server: http://localhost:5000
 ## Phân công
 | Thành viên | Chức năng phụ trách |
 |---|---|
-| TV1 | ... |
-| TV2 | ... |
-| TV3 | ... |
-| TV4 | ... |
+| Khoa | Giữ ghế: model SeatLock, API hold/release, kiểm tra hạn theo giờ server ; đếm ngược 5 phút, xử lý F5 và nhiều tab ; sơ đồ ghế SeatMap, Redux seatSlice, useMemo tổng tiền ; model Room và sinh ghế |
+| Dũng | Đặt vé: xác nhận booking, model Ticket, unique index, trả 409 kèm ghế trùng, rollback ; hủy vé trước 2 giờ, lịch sử vé, MyTicketsPage ; Auth: JWT, bcrypt, middleware phân quyền, AuthContext, Login/Register; admin quản lý tài khoản  |
+| Tuấn | Real-time: Socket.IO, room theo showtimeId, phát sự kiện giữ/hủy/đặt/hủy vé, cleanup listener ; thống kê Aggregation, DashboardPage, RevenueChart ; Showtime CRUD, kiểm tra chồng giờ, admin suất chiếu, admin xem vé/booking |
+| Tùng | Phim: model, CRUD, tìm kiếm, lọc, phân trang server ; giao diện Home, danh sách phim, chi tiết, trailer; nền tảng: Router, layout, common, ProtectedRoute, 404 ; seed, README, responsive, tài khoản demo; admin phim và admin phòng|
