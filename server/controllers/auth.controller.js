@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
@@ -100,6 +101,31 @@ exports.listUsers = async (req, res, next) => {
       User.countDocuments(filter),
     ]);
     res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+};
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!isValidObjectId(id))
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    if (!["member", "admin"].includes(role))
+      return res.status(400).json({ message: "Role không hợp lệ" });
+    if (req.user.id === id)
+      return res
+        .status(400)
+        .json({ message: "Không thể tự đổi quyền của chính mình" });
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true, runValidators: true },
+    ).select("-password");
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy tài khoản" });
+    res.json(user);
   } catch (err) {
     next(err);
   }
