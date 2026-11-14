@@ -1,3 +1,6 @@
-const router = require('express').Router();
-// TODO: POST /register, POST /login, GET /me
+const router = require("express").Router();
+const { register } = require("../controllers/auth.controller");
+
+router.post("/register", register);
+
 module.exports = router;
