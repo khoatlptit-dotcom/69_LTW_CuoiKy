@@ -77,3 +77,30 @@ exports.me = async (req, res, next) => {
     next(err);
   }
 };
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+exports.listUsers = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+    const filter = {};
+    if (req.query.search) {
+      const regex = new RegExp(escapeRegex(String(req.query.search)), "i");
+      filter.$or = [{ name: regex }, { email: regex }];
+    }
+    if (req.query.role)
+      filter.role = { $in: String(req.query.role).split(",") };
+
+    const [items, total] = await Promise.all([
+      User.find(filter)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      User.countDocuments(filter),
+    ]);
+    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+};
