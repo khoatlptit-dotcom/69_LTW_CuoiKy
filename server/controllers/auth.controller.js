@@ -47,3 +47,23 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email ||
+      !password
+    ) {
+      return res.status(400).json({ message: "Thiếu email hoặc mật khẩu" });
+    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Sai email hoặc mật khẩu" });
+    }
+    res.json({ token: signToken(user), user: publicUser(user) });
+  } catch (err) {
+    next(err);
+  }
+};
