@@ -67,3 +67,13 @@ exports.login = async (req, res, next) => {
     next(err);
   }
 };
+exports.me = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy tài khoản" });
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    next(err);
+  }
+};
