@@ -18,7 +18,7 @@ exports.getAll = async (req, res, next) => {
 
     const total = await Movie.countDocuments(filter);
     const data = await Movie.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
