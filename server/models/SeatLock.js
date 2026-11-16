@@ -33,5 +33,9 @@ seatLockSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // Mỗi người chỉ có một phiên giữ ghế trên mỗi suất chiếu.
 seatLockSchema.index({ showtime: 1, user: 1 }, { unique: true });
 
+// Mỗi ghế trong một suất chiếu chỉ thuộc về một phiên giữ ghế.
+// Đây là chốt chặn hai người cùng giữ một ghế khi request đến đồng thời.
+seatLockSchema.index({ showtime: 1, seatNumbers: 1 }, { unique: true });
+
 module.exports = mongoose.model('SeatLock', seatLockSchema);
 module.exports.MAX_SEATS = MAX_SEATS;

@@ -16,7 +16,10 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (status >= 500) console.error(err);
-  res.status(status).json({ success: false, message });
+
+  const body = { success: false, message };
+  if (err.details) body.details = err.details;
+  res.status(status).json(body);
 };
 
 module.exports = errorHandler;
