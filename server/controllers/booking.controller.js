@@ -5,6 +5,7 @@ require("../models/Room"); // dang ky cac model duoc populate (neu khong se loi 
 require("../models/Movie");
 
 const MAX_SEATS = 8;
+const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
 const FIRST_ROW_INDEX = 0; // Room.vipRows là chỉ số hàng; đổi thành 1 nếu A đánh số hàng từ 1 (hỏi A)
 
 // Mã ghế: chữ cái hàng + số ghế, ví dụ "A1", "F10"
@@ -139,6 +140,46 @@ exports.getMine = async (req, res, next) => {
       Booking.countDocuments(filter),
     ]);
     res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.cancel = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id))
+      return res.status(400).json({ message: "ID không hợp lệ" });
+
+    const booking = await Booking.findById(id).populate(
+      "showtime",
+      "startTime",
+    );
+    if (!booking) return res.status(404).json({ message: "Không tìm thấy vé" });
+    if (String(booking.user) !== req.user.id) {
+      return res.status(403).json({ message: "Bạn không có quyền hủy vé này" });
+    }
+    if (booking.status === "cancelled")
+      return res.status(400).json({ message: "Vé đã được hủy" });
+    if (!booking.showtime) {
+      return res
+        .status(404)
+        .json({ message: "Suất chiếu của vé không còn tồn tại" });
+    }
+    if (booking.showtime.startTime.getTime() - Date.now() < CANCEL_BEFORE_MS) {
+      return res
+        .status(400)
+        .json({ message: "Chỉ được hủy vé trước giờ chiếu ít nhất 2 tiếng" });
+    }
+
+    // Điều kiện status giúp tránh hủy hai lần cùng lúc
+    const updated = await Booking.findOneAndUpdate(
+      { _id: booking._id, status: "confirmed" },
+      { status: "cancelled" },
+      { new: true },
+    );
+    if (!updated) return res.status(400).json({ message: "Vé đã được hủy" });
+    res.json(updated);
   } catch (err) {
     next(err);
   }
