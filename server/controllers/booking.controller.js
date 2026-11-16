@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Showtime = require("../models/Showtime");
-require("../models/Room"); // đăng ký model Room để populate("room") hoạt động
+require("../models/Room"); // dang ky cac model duoc populate (neu khong se loi MissingSchemaError)
+require("../models/Movie");
 
 const MAX_SEATS = 8;
 const FIRST_ROW_INDEX = 0; // Room.vipRows là chỉ số hàng; đổi thành 1 nếu A đánh số hàng từ 1 (hỏi A)
@@ -96,11 +97,48 @@ exports.create = async (req, res, next) => {
         taken.some((b) => b.seats.includes(seat)),
       );
       const list = conflict.length ? conflict : seats;
-      return res.status(409).json({
-        message: `Ghế ${list.join(", ")} đã có người đặt`,
-        seats: list,
-      });
+      return res
+        .status(409)
+        .json({
+          message: `Ghế ${list.join(", ")} đã có người đặt`,
+          seats: list,
+        });
     }
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMine = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+    const filter = { user: req.user.id };
+    if (req.query.status)
+      filter.status = { $in: String(req.query.status).split(",") };
+    if (req.query.from) {
+      const from = new Date(req.query.from);
+      if (Number.isNaN(from.getTime()))
+        return res.status(400).json({ message: "Ngày không hợp lệ" });
+      filter.createdAt = { $gte: from };
+    }
+
+    const [items, total] = await Promise.all([
+      Booking.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate({
+          path: "showtime",
+          select: "startTime endTime room movie",
+          populate: [
+            { path: "movie", select: "title poster" },
+            { path: "room", select: "name" },
+          ],
+        }),
+      Booking.countDocuments(filter),
+    ]);
+    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }

@@ -4,5 +4,6 @@ const { protect, authorize } = require("../middleware/auth");
 
 router.get("/", ctrl.getAll);
 router.post("/", protect, ctrl.create);
+router.get("/me", protect, ctrl.getMine);
 
 module.exports = router;
