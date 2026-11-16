@@ -7,7 +7,8 @@ const poster = (text) =>
 
 const movies = [
   { title: 'Hành Trình Về Phương Nam', genres: ['Phiêu lưu', 'Gia đình'], duration: 112, status: 'now',
-    description: 'Cuộc hành trình của hai anh em xuyên qua miền Tây sông nước.' },
+  trailerUrl: 'https://www.youtube.com/watch?v=gihuep9BNSg',
+  description: 'Cuộc hành trình của hai anh em xuyên qua miền Tây sông nước.' },
   { title: 'Đêm Không Trăng', genres: ['Kinh dị'], duration: 98, status: 'now',
     description: 'Một nhóm bạn mắc kẹt trong ngôi nhà cổ giữa đêm tối.' },
   { title: 'Mật Mã Sài Gòn', genres: ['Hành động', 'Hình sự'], duration: 125, status: 'now',
@@ -28,7 +29,7 @@ const movies = [
     description: 'Cô bé tìm thấy thế giới pha lê sau tấm gương trong phòng mình.' },
   { title: 'Thanh Xuân Không Ngủ', genres: ['Tình cảm', 'Hài'], duration: 100, status: 'upcoming',
     description: 'Những đêm thức trắng của nhóm bạn trẻ khởi nghiệp.' },
-].map((m) => ({ ...m, poster: poster(m.title), trailerUrl: '' }));
+].map((m) => ({ ...m, poster: poster(m.title), trailerUrl: m.trailerUrl || '' }));
 
 (async () => {
   await mongoose.connect(process.env.MONGO_URI);
