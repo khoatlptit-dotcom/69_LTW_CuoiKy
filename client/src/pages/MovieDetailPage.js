@@ -53,11 +53,11 @@ const MovieDetailPage = () => {
   const embedUrl = getYoutubeEmbed(movie.trailerUrl);
 
   return (
-    <div>
+    <div className="movie-detail">
       <Link to="/">← Quay lại danh sách</Link>
 
       <h2>{movie.title}</h2>
-      <img src={movie.poster} alt={movie.title} width="250" />
+      <img src={movie.poster} alt={movie.title} />
 
       <p>Thể loại: {(movie.genres || []).join(', ')}</p>
       <p>Thời lượng: {movie.duration} phút</p>
@@ -67,11 +67,10 @@ const MovieDetailPage = () => {
       <h3>Trailer</h3>
       {embedUrl ? (
         <iframe
-          width="560"
-          height="315"
           src={embedUrl}
           title={`Trailer ${movie.title}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
         />
       ) : (

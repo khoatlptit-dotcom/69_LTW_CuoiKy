@@ -128,67 +128,55 @@ const ManageMoviesPage = () => {
   };
 
   return (
-    <div>
+    <div className="admin-page">
       <h2>Quản lý phim</h2>
 
       {error && <p>Lỗi: {error}</p>}
       {notice && <p>{notice}</p>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="admin-form" onSubmit={handleSubmit}>
         <h3>{editingId ? 'Sửa phim' : 'Thêm phim mới'}</h3>
+        <input name="title" value={form.title} onChange={handleChange} placeholder="Tên phim *" />
+        <input
+          name="genres"
+          value={form.genres}
+          onChange={handleChange}
+          placeholder="Thể loại, cách nhau bằng dấu phẩy (VD: Hành động, Hài)"
+        />
+        <input
+          name="duration"
+          type="number"
+          min="1"
+          value={form.duration}
+          onChange={handleChange}
+          placeholder="Thời lượng (phút) *"
+        />
+        <input name="poster" value={form.poster} onChange={handleChange} placeholder="Link ảnh poster" />
+        <input name="trailerUrl" value={form.trailerUrl} onChange={handleChange} placeholder="Link trailer YouTube" />
+        <textarea
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          placeholder="Mô tả"
+          rows="3"
+        />
+        <select name="status" value={form.status} onChange={handleChange}>
+          <option value="now">Đang chiếu</option>
+          <option value="upcoming">Sắp chiếu</option>
+        </select>
         <div>
-          <input name="title" value={form.title} onChange={handleChange} placeholder="Tên phim *" />
+          <button type="submit">{editingId ? 'Lưu thay đổi' : 'Thêm phim'}</button>
+          {editingId && (
+            <button type="button" onClick={resetForm}>
+              Hủy sửa
+            </button>
+          )}
         </div>
-        <div>
-          <input
-            name="genres"
-            value={form.genres}
-            onChange={handleChange}
-            placeholder="Thể loại, cách nhau bằng dấu phẩy (VD: Hành động, Hài)"
-          />
-        </div>
-        <div>
-          <input
-            name="duration"
-            type="number"
-            min="1"
-            value={form.duration}
-            onChange={handleChange}
-            placeholder="Thời lượng (phút) *"
-          />
-        </div>
-        <div>
-          <input name="poster" value={form.poster} onChange={handleChange} placeholder="Link ảnh poster" />
-        </div>
-        <div>
-          <input name="trailerUrl" value={form.trailerUrl} onChange={handleChange} placeholder="Link trailer YouTube" />
-        </div>
-        <div>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Mô tả"
-            rows="3"
-          />
-        </div>
-        <div>
-          <select name="status" value={form.status} onChange={handleChange}>
-            <option value="now">Đang chiếu</option>
-            <option value="upcoming">Sắp chiếu</option>
-          </select>
-        </div>
-        <button type="submit">{editingId ? 'Lưu thay đổi' : 'Thêm phim'}</button>
-        {editingId && (
-          <button type="button" onClick={resetForm}>
-            Hủy sửa
-          </button>
-        )}
       </form>
 
       <hr />
 
-      <form onSubmit={handleSearch}>
+      <form className="search-form" onSubmit={handleSearch}>
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
@@ -199,36 +187,38 @@ const ManageMoviesPage = () => {
 
       {loading && <p>Đang tải...</p>}
 
-      <table border="1" cellPadding="6">
-        <thead>
-          <tr>
-            <th>Tên phim</th>
-            <th>Thể loại</th>
-            <th>Thời lượng</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {movies.map((m) => (
-            <tr key={m._id}>
-              <td>{m.title}</td>
-              <td>{(m.genres || []).join(', ')}</td>
-              <td>{m.duration} phút</td>
-              <td>{m.status === 'now' ? 'Đang chiếu' : 'Sắp chiếu'}</td>
-              <td>
-                <button onClick={() => handleEdit(m)}>Sửa</button>
-                <button onClick={() => handleDelete(m)}>Xóa</button>
-              </td>
-            </tr>
-          ))}
-          {!loading && movies.length === 0 && (
+      <div className="table-scroll">
+        <table>
+          <thead>
             <tr>
-              <td colSpan="5">Không có phim nào.</td>
+              <th>Tên phim</th>
+              <th>Thể loại</th>
+              <th>Thời lượng</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {movies.map((m) => (
+              <tr key={m._id}>
+                <td>{m.title}</td>
+                <td>{(m.genres || []).join(', ')}</td>
+                <td>{m.duration} phút</td>
+                <td>{m.status === 'now' ? 'Đang chiếu' : 'Sắp chiếu'}</td>
+                <td>
+                  <button onClick={() => handleEdit(m)}>Sửa</button>
+                  <button onClick={() => handleDelete(m)}>Xóa</button>
+                </td>
+              </tr>
+            ))}
+            {!loading && movies.length === 0 && (
+              <tr>
+                <td colSpan="5">Không có phim nào.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>

@@ -12,10 +12,10 @@ const HomePage = () => {
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [keyword, setKeyword] = useState(''); // chữ đang gõ trong ô tìm kiếm
-  const [q, setQ] = useState(''); // chữ đã bấm Tìm
+  const [keyword, setKeyword] = useState('');
+  const [q, setQ] = useState('');
   const [genre, setGenre] = useState('');
-  const [status, setStatus] = useState(''); // '' = tất cả
+  const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,7 +64,7 @@ const HomePage = () => {
     <div>
       <h2>Danh sách phim</h2>
 
-      <form onSubmit={handleSearch}>
+      <form className="search-form" onSubmit={handleSearch}>
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
@@ -73,7 +73,7 @@ const HomePage = () => {
         <button type="submit">Tìm</button>
       </form>
 
-      <div>
+      <div className="filters">
         <button onClick={() => handleStatus('')}>Tất cả</button>
         <button onClick={() => handleStatus('now')}>Đang chiếu</button>
         <button onClick={() => handleStatus('upcoming')}>Sắp chiếu</button>
@@ -90,7 +90,7 @@ const HomePage = () => {
       {error && <p>Lỗi: {error}</p>}
       {!loading && !error && movies.length === 0 && <p>Không tìm thấy phim nào.</p>}
 
-      <div>
+      <div className="movie-grid">
         {movies.map((movie) => (
           <MovieCard key={movie._id} movie={movie} />
         ))}
