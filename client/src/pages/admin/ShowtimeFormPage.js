@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import '../../styles/admin.css';
 import useFetch from '../../hooks/useFetch';
 import * as showtimeApi from '../../api/showtimeApi';
 import ShowtimeForm from '../../components/admin/ShowtimeForm';
@@ -38,7 +39,7 @@ const ShowtimeFormPage = () => {
   if (error || !data) return <p role="alert">{error?.message || 'Không tải được dữ liệu'}</p>;
 
   return (
-    <section>
+    <section className="admin-page">
       <h1>{id ? 'Sửa' : 'Thêm'} suất chiếu</h1>
       <ShowtimeForm
         movies={data.movies}

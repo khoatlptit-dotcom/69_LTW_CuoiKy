@@ -1,0 +1,14 @@
+.admin-page { max-width: 960px; margin: 0 auto; padding: 16px; }
+.admin-page h1 { font-size: 1.5rem; margin: 0 0 16px; }
+.admin-page a { color: #2563eb; }
+.admin-page button { padding: 6px 12px; border: 1px solid #2563eb; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+.admin-page button:disabled { opacity: 0.5; cursor: not-allowed; }
+.admin-page button.btn-danger { background: #dc2626; border-color: #dc2626; }
+.admin-page input, .admin-page select { width: 100%; max-width: 420px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.form-field { margin-bottom: 12px; }
+.form-field label { display: block; margin-bottom: 4px; font-weight: 600; }
+.error-text { color: #dc2626; margin: 4px 0 0; font-size: 0.875rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+.admin-table th { background: #f1f5f9; }

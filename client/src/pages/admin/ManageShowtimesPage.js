@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import * as showtimeApi from '../../api/showtimeApi';
 import { formatDateTime } from '../../utils/format';
+import '../../styles/admin.css';
 
 const ManageShowtimesPage = () => {
   const [filters, setFilters] = useState({ date: '', page: 1 });
@@ -27,7 +28,7 @@ const ManageShowtimesPage = () => {
   };
 
   return (
-    <section>
+    <section className="admin-page">
       <h1>Quản lý suất chiếu</h1>
       <Link to="new">+ Thêm suất chiếu</Link>
       <div>
@@ -39,27 +40,29 @@ const ManageShowtimesPage = () => {
           onChange={(e) => setFilters({ date: e.target.value, page: 1 })}
         />
       </div>
-      {message && <p role="alert">{message}</p>}
+      {message && <p role="alert" className="error-text">{message}</p>}
       {loading && <p>Đang tải...</p>}
-      {error && !data && <p role="alert">{error.message}</p>}
-      <table>
-        <thead>
-          <tr><th>Phim</th><th>Phòng</th><th>Giờ chiếu</th><th>Thao tác</th></tr>
-        </thead>
-        <tbody>
-          {(data?.data ?? []).map((s) => (
-            <tr key={s._id}>
-              <td>{s.movie?.title}</td>
-              <td>{s.room?.name}</td>
-              <td>{formatDateTime(s.startTime)}</td>
-              <td>
-                <Link to={`${s._id}/edit`}>Sửa</Link>{' '}
-                <button type="button" onClick={() => handleDelete(s._id)}>Xóa</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {error && !data && <p role="alert" className="error-text">{error.message}</p>}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr><th>Phim</th><th>Phòng</th><th>Giờ chiếu</th><th>Thao tác</th></tr>
+          </thead>
+          <tbody>
+            {(data?.data ?? []).map((s) => (
+              <tr key={s._id}>
+                <td>{s.movie?.title}</td>
+                <td>{s.room?.name}</td>
+                <td>{formatDateTime(s.startTime)}</td>
+                <td>
+                  <Link to={`${s._id}/edit`}>Sửa</Link>{' '}
+                  <button type="button" className="btn-danger" onClick={() => handleDelete(s._id)}>Xóa</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <div>
         <button type="button" disabled={filters.page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
           Trước
