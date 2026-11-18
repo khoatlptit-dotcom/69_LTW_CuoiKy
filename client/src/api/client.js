@@ -33,4 +33,4 @@ const request = async (path, { method = 'GET', body } = {}) => {
   return response.data;
 };
 
-export default request;
+export default request; 

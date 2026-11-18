@@ -1,117 +1,103 @@
 const Room = require('../models/Room');
 const Showtime = require('../models/Showtime');
 
-const FIELDS = ['name', 'rows', 'seatsPerRow', 'vipRows'];
+// Chuẩn hóa và kiểm tra dữ liệu gửi lên
+const parseRoom = (body) => {
+  const name = String(body.name || '').trim();
+  const rows = Number(body.rows);
+  const seatsPerRow = Number(body.seatsPerRow);
+  const vipRows = [
+    ...new Set((Array.isArray(body.vipRows) ? body.vipRows : []).map(Number)),
+  ].sort((a, b) => a - b);
 
-const httpError = (status, message) => Object.assign(new Error(message), { status });
-
-const findRoom = async (id) => {
-  const room = await Room.findById(id);
-  if (!room) throw httpError(404, 'Không tìm thấy phòng chiếu');
-  return room;
+  if (!name) return { error: 'Vui lòng nhập tên phòng' };
+  if (!Number.isInteger(rows) || rows < 1 || rows > 26) {
+    return { error: 'Số hàng ghế phải là số nguyên từ 1 đến 26' };
+  }
+  if (!Number.isInteger(seatsPerRow) || seatsPerRow < 1 || seatsPerRow > 30) {
+    return { error: 'Số ghế mỗi hàng phải là số nguyên từ 1 đến 30' };
+  }
+  if (vipRows.some((r) => !Number.isInteger(r) || r < 1 || r > rows)) {
+    return { error: `Hàng VIP phải là số nguyên từ 1 đến ${rows}` };
+  }
+  return { data: { name, rows, seatsPerRow, vipRows } };
 };
 
-const pickFields = (body) =>
-  FIELDS.reduce((result, field) => {
-    if (body[field] !== undefined) result[field] = body[field];
-    return result;
-  }, {});
-
-const assertVipRowsIsArray = (body) => {
-  if (body.vipRows !== undefined && !Array.isArray(body.vipRows)) {
-    throw httpError(400, 'vipRows phải là một mảng số hàng');
-  }
-};
-
-const isStructureChanged = (room, body) => {
-  if (body.rows !== undefined && Number(body.rows) !== room.rows) return true;
-  if (body.seatsPerRow !== undefined && Number(body.seatsPerRow) !== room.seatsPerRow) {
-    return true;
-  }
-  if (body.vipRows !== undefined) {
-    const next = body.vipRows.map(Number).sort((a, b) => a - b);
-    const current = [...room.vipRows].sort((a, b) => a - b);
-    return JSON.stringify(next) !== JSON.stringify(current);
-  }
-  return false;
-};
-
+// GET /api/rooms
 exports.getAll = async (req, res, next) => {
   try {
     const rooms = await Room.find().sort({ name: 1 });
-    res.json({ success: true, data: rooms });
+    res.json(rooms);
   } catch (err) {
     next(err);
   }
 };
 
-exports.getOne = async (req, res, next) => {
+// GET /api/rooms/:id
+exports.getById = async (req, res, next) => {
   try {
-    const room = await findRoom(req.params.id);
-    res.json({ success: true, data: room });
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Không tìm thấy phòng' });
+    res.json(room);
   } catch (err) {
     next(err);
   }
 };
 
-// Sơ đồ ghế được sinh từ cấu hình phòng trong database.
-exports.getSeats = async (req, res, next) => {
-  try {
-    const room = await findRoom(req.params.id);
-    res.json({ success: true, data: { room, seats: room.getSeats() } });
-  } catch (err) {
-    next(err);
-  }
-};
-
+// POST /api/rooms (admin)
 exports.create = async (req, res, next) => {
   try {
-    assertVipRowsIsArray(req.body);
-    const room = await Room.create(pickFields(req.body));
-    res.status(201).json({ success: true, data: room });
+    const { data, error } = parseRoom(req.body);
+    if (error) return res.status(400).json({ message: error });
+    const room = await Room.create(data);
+    res.status(201).json(room);
   } catch (err) {
     next(err);
   }
 };
 
+// PUT /api/rooms/:id (admin)
 exports.update = async (req, res, next) => {
   try {
-    assertVipRowsIsArray(req.body);
-    const room = await findRoom(req.params.id);
+    const { data, error } = parseRoom(req.body);
+    if (error) return res.status(400).json({ message: error });
 
-    if (isStructureChanged(room, req.body)) {
-      const hasUpcoming = await Showtime.exists({
-        room: room._id,
-        endTime: { $gt: new Date() },
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Không tìm thấy phòng' });
+
+    const oldVip = [...room.vipRows].sort((a, b) => a - b);
+    const layoutChanged =
+      room.rows !== data.rows ||
+      room.seatsPerRow !== data.seatsPerRow ||
+      JSON.stringify(oldVip) !== JSON.stringify(data.vipRows);
+
+    // Phòng đã có suất chiếu thì không đổi sơ đồ ghế, tránh hỏng vé đã đặt
+    if (layoutChanged && (await Showtime.exists({ room: room._id }))) {
+      return res.status(409).json({
+        message: 'Phòng đã có suất chiếu, chỉ được đổi tên, không đổi sơ đồ ghế',
       });
-      if (hasUpcoming) {
-        throw httpError(
-          409,
-          'Phòng còn suất chiếu chưa kết thúc, không thể đổi kích thước hoặc hàng VIP'
-        );
-      }
     }
 
-    room.set(pickFields(req.body));
-    room.markModified('vipRows'); // luôn kiểm tra lại hàng VIP so với số hàng mới
+    room.set(data);
     await room.save();
-    res.json({ success: true, data: room });
+    res.json(room);
   } catch (err) {
     next(err);
   }
 };
 
+// DELETE /api/rooms/:id (admin)
 exports.remove = async (req, res, next) => {
   try {
-    const room = await findRoom(req.params.id);
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Không tìm thấy phòng' });
 
-    const hasShowtimes = await Showtime.exists({ room: room._id });
-    if (hasShowtimes) {
-      throw httpError(409, 'Phòng đã có suất chiếu, không thể xóa');
+    if (await Showtime.exists({ room: room._id })) {
+      return res.status(409).json({ message: 'Phòng đang có suất chiếu, không thể xóa' });
     }
 
     await room.deleteOne();
-    res.json({ success: true, message: 'Đã xóa phòng chiếu' });
+    res.json({ message: 'Đã xóa phòng' });
   } catch (err) {
     next(err);
   }
