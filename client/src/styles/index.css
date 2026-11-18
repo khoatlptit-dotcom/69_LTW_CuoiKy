@@ -1,2 +1,61 @@
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, sans-serif; }
+:root {
+  --bg: #f5f6fa;
+  --text: #1f2430;
+  --muted: #6b7280;
+  --primary: #e50914;
+  --card: #ffffff;
+  --border: #e3e5ea;
+  --radius: 10px;
+}
+
+body { background: var(--bg); color: var(--text); line-height: 1.5; }
+img { max-width: 100%; height: auto; }
+
+/* ===== Thanh trên và menu ===== */
+nav { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+nav a { color: var(--text); text-decoration: none; }
+nav a.active { font-weight: 700; color: var(--primary); }
+
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; background: #14161c; }
+header a { color: #fff; text-decoration: none; }
+header > a { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+header nav { padding: 0; background: none; border: 0; }
+header nav a:hover { text-decoration: underline; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+footer { text-align: center; padding: 16px; color: var(--muted); border-top: 1px solid var(--border); }
+
+/* ===== Ô nhập và nút trong trang của Tùng ===== */
+.search-form input, .filters select,
+.admin-form input, .admin-form select, .admin-form textarea {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit;
+}
+.search-form button, .filters button, .admin-form button, .admin-page td button {
+  padding: 8px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; font: inherit;
+}
+.search-form { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-form input { flex: 1; min-width: 0; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+/* ===== Lưới phim: 2 cột điện thoại, 3 cột máy tính bảng, 4 cột máy tính ===== */
+.movie-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+.movie-card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; text-decoration: none; color: inherit; padding-bottom: 8px; }
+.movie-card img { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: #ddd; }
+.movie-card h3 { margin: 8px 10px 4px; font-size: 1rem; }
+.movie-card p { margin: 2px 10px; color: var(--muted); font-size: 0.85rem; }
+@media (min-width: 600px) { .movie-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 900px) { .movie-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* ===== Trang chi tiết phim ===== */
+.movie-detail img { display: block; width: 60%; max-width: 250px; margin: 12px 0; border-radius: var(--radius); }
+.movie-detail iframe { display: block; width: 100%; max-width: 560px; height: auto; aspect-ratio: 16 / 9; border: 0; }
+
+/* ===== Trang admin ===== */
+.admin-form { display: grid; gap: 10px; max-width: 480px; margin-bottom: 16px; }
+.admin-form input, .admin-form select, .admin-form textarea { width: 100%; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.admin-page table { border-collapse: collapse; width: 100%; min-width: 520px; background: var(--card); }
+.admin-page th, .admin-page td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; }
+.admin-page td button { margin-right: 6px; }
