@@ -6,5 +6,5 @@ export const getById = (id) => request(`/showtimes/${id}`);
 export const create = (body) => request('/showtimes', { method: 'POST', body });
 export const update = (id, body) => request(`/showtimes/${id}`, { method: 'PUT', body });
 export const remove = (id) => request(`/showtimes/${id}`, { method: 'DELETE' });
-export const getMovieOptions = () => request('/movies?limit=100');
+export const getMovieOptions = () => request('/movies?limit=50');
 export const getRoomOptions = () => request('/rooms');

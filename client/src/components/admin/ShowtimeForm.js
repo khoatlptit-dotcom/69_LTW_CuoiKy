@@ -43,7 +43,7 @@ const ShowtimeForm = ({ movies, rooms, initial, onSubmit, submitting, serverErro
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate className="admin-form">
       {serverError && <p role="alert" className="error-text">{serverError}</p>}
       <FormField name="movie" label="Phim" error={errors.movie}>
         <select id="movie" name="movie" value={values.movie} onChange={handleChange}>

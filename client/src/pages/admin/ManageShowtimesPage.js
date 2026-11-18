@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import * as showtimeApi from '../../api/showtimeApi';
+import Pagination from '../../components/common/Pagination';
 import { formatDateTime } from '../../utils/format';
 import '../../styles/admin.css';
 
@@ -14,7 +15,6 @@ const ManageShowtimesPage = () => {
     () => showtimeApi.getAll({ ...filters, limit: 10 }),
     [filters, reloadKey]
   );
-  const totalPages = data?.totalPages || 1;
 
   const handleDelete = async (id) => {
     if (!window.confirm('Xóa suất chiếu này?')) return;
@@ -30,21 +30,23 @@ const ManageShowtimesPage = () => {
   return (
     <section className="admin-page">
       <h1>Quản lý suất chiếu</h1>
-      <Link to="new">+ Thêm suất chiếu</Link>
-      <div>
-        <label htmlFor="date">Ngày chiếu</label>
-        <input
-          id="date"
-          type="date"
-          value={filters.date}
-          onChange={(e) => setFilters({ date: e.target.value, page: 1 })}
-        />
+      <p><Link to="new">+ Thêm suất chiếu</Link></p>
+      <div className="date-filter">
+        <div>
+          <label htmlFor="date">Ngày chiếu</label>
+          <input
+            id="date"
+            type="date"
+            value={filters.date}
+            onChange={(e) => setFilters({ date: e.target.value, page: 1 })}
+          />
+        </div>
       </div>
       {message && <p role="alert" className="error-text">{message}</p>}
       {loading && <p>Đang tải...</p>}
       {error && !data && <p role="alert" className="error-text">{error.message}</p>}
-      <div className="admin-table-wrap">
-        <table className="admin-table">
+      <div className="table-scroll">
+        <table>
           <thead>
             <tr><th>Phim</th><th>Phòng</th><th>Giờ chiếu</th><th>Thao tác</th></tr>
           </thead>
@@ -55,7 +57,7 @@ const ManageShowtimesPage = () => {
                 <td>{s.room?.name}</td>
                 <td>{formatDateTime(s.startTime)}</td>
                 <td>
-                  <Link to={`${s._id}/edit`}>Sửa</Link>{' '}
+                  <Link to={`${s._id}/edit`}>Sửa</Link>
                   <button type="button" className="btn-danger" onClick={() => handleDelete(s._id)}>Xóa</button>
                 </td>
               </tr>
@@ -63,15 +65,11 @@ const ManageShowtimesPage = () => {
           </tbody>
         </table>
       </div>
-      <div>
-        <button type="button" disabled={filters.page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
-          Trước
-        </button>
-        <span> {filters.page} / {totalPages} </span>
-        <button type="button" disabled={filters.page >= totalPages} onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
-          Sau
-        </button>
-      </div>
+      <Pagination
+        page={filters.page}
+        totalPages={data?.totalPages || 1}
+        onChange={(page) => setFilters((f) => ({ ...f, page }))}
+      />
     </section>
   );
 };
