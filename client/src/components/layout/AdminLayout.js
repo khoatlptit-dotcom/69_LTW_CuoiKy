@@ -7,6 +7,7 @@ const AdminLayout = () => (
       <NavLink to="/admin/movies">Phim</NavLink>
       <NavLink to="/admin/rooms">Phòng chiếu</NavLink>
       <NavLink to="/admin/showtimes">Suất chiếu</NavLink>
+      <NavLink to="/admin/bookings">Vé đã đặt</NavLink>
     </nav>
     <main>
       <Outlet />

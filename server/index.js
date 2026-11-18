@@ -16,6 +16,7 @@ app.use('/api/rooms', require('./routes/room.routes'));
 app.use('/api/showtimes', require('./routes/showtime.routes'));
 app.use('/api/bookings', require('./routes/booking.routes'));
 app.use('/api/stats', require('./routes/stats.routes'));
+app.use('/api/admin/bookings', require('./routes/adminBooking.routes'));
 
 app.use((req, res) => res.status(404).json({ message: 'Không tìm thấy API' }));
 app.use(errorHandler);
