@@ -1,8 +1,8 @@
 const Footer = () => {
   return (
-    <div>
-      <h2>Footer</h2>
-    </div>
+    <footer>
+      <p>© 2026 Cinema. Bài tập lớn Lập trình Web.</p>
+    </footer>
   );
 };
 
