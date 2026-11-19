@@ -8,5 +8,5 @@ const showtimeSchema = new mongoose.Schema({
   priceNormal: { type: Number, default: 80000 },
   priceVip: { type: Number, default: 120000 },
 });
-
+showtimeSchema.index({ room: 1, startTime: 1, endTime: 1 });
 module.exports = mongoose.model('Showtime', showtimeSchema);
