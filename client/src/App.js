@@ -15,6 +15,7 @@ import DashboardPage from './pages/admin/DashboardPage';
 import ManageMoviesPage from './pages/admin/ManageMoviesPage';
 import ManageRoomsPage from './pages/admin/ManageRoomsPage';
 import ManageShowtimesPage from './pages/admin/ManageShowtimesPage';
+import ShowtimeFormPage from './pages/admin/ShowtimeFormPage';
 
 const App = () => (
   <Routes>
@@ -36,6 +37,8 @@ const App = () => (
         <Route path="movies" element={<ManageMoviesPage />} />
         <Route path="rooms" element={<ManageRoomsPage />} />
         <Route path="showtimes" element={<ManageShowtimesPage />} />
+        <Route path="showtimes/new" element={<ShowtimeFormPage />} />
+        <Route path="showtimes/:id/edit" element={<ShowtimeFormPage />} />
       </Route>
     </Route>
 
