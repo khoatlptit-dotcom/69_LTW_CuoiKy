@@ -1,8 +1,16 @@
 const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Showtime = require("../models/Showtime");
+const User = require("../models/User");
 require("../models/Room"); // dang ky cac model duoc populate (neu khong se loi MissingSchemaError)
 require("../models/Movie");
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const parseDate = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 const MAX_SEATS = 8;
 const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
@@ -40,9 +48,61 @@ const calcTotal = (showtime, room, seats) =>
     0,
   );
 
+// Admin: danh sách vé của mọi người. Lọc: status, showtimeId, search (tên hoặc email), from, to
 exports.getAll = async (req, res, next) => {
   try {
-    res.json([]);
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+    const { status, showtimeId, search, from, to } = req.query;
+    const filter = {};
+
+    if (status) filter.status = { $in: String(status).split(",") };
+    if (showtimeId) {
+      if (!mongoose.isValidObjectId(showtimeId)) {
+        return res.status(400).json({ message: "Suất chiếu không hợp lệ" });
+      }
+      filter.showtime = showtimeId;
+    }
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) {
+        const date = parseDate(from);
+        if (!date)
+          return res.status(400).json({ message: "Ngày không hợp lệ" });
+        filter.createdAt.$gte = date;
+      }
+      if (to) {
+        const date = parseDate(to);
+        if (!date)
+          return res.status(400).json({ message: "Ngày không hợp lệ" });
+        filter.createdAt.$lte = date;
+      }
+    }
+    if (search) {
+      const regex = new RegExp(escapeRegex(String(search)), "i");
+      const users = await User.find({
+        $or: [{ name: regex }, { email: regex }],
+      }).select("_id");
+      filter.user = { $in: users.map((u) => u._id) };
+    }
+
+    const [items, total] = await Promise.all([
+      Booking.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("user", "name email")
+        .populate({
+          path: "showtime",
+          select: "startTime endTime room movie",
+          populate: [
+            { path: "movie", select: "title poster" },
+            { path: "room", select: "name" },
+          ],
+        }),
+      Booking.countDocuments(filter),
+    ]);
+    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }
