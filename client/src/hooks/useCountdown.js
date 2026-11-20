@@ -1,15 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-// Đếm ngược (giây); gọi onExpire khi về 0
-const useCountdown = (seconds, onExpire) => {
-  const [left, setLeft] = useState(seconds);
+const calcSecondsLeft = (expiresAt, offsetMs) =>
+  expiresAt
+    ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - (Date.now() + offsetMs)) / 1000))
+    : null;
+
+// expiresAt: hạn giữ ghế do server trả về
+// offsetMs: serverTime - Date.now() của máy khách, để đồng hồ theo giờ server
+const useCountdown = (expiresAt, offsetMs = 0, onExpire) => {
+  const [left, setLeft] = useState(() => calcSecondsLeft(expiresAt, offsetMs));
+  const onExpireRef = useRef(onExpire);
+
   useEffect(() => {
-    const id = setInterval(() => setLeft((l) => l - 1), 1000);
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    setLeft(calcSecondsLeft(expiresAt, offsetMs));
+    if (!expiresAt) return undefined;
+
+    const id = setInterval(() => {
+      const next = calcSecondsLeft(expiresAt, offsetMs);
+      setLeft(next);
+      if (next <= 0) {
+        clearInterval(id);
+        onExpireRef.current?.();
+      }
+    }, 1000);
+
     return () => clearInterval(id);
-  }, []);
-  useEffect(() => {
-    if (left <= 0) onExpire?.();
-  }, [left, onExpire]);
+  }, [expiresAt, offsetMs]);
+
   return left;
 };
 
