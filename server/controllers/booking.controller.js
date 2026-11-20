@@ -6,7 +6,7 @@ require("../models/Movie");
 
 const MAX_SEATS = 8;
 const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
-const FIRST_ROW_INDEX = 0; // Room.vipRows là chỉ số hàng; đổi thành 1 nếu A đánh số hàng từ 1 (hỏi A)
+const FIRST_ROW_INDEX = 1; // Room.vipRows đánh số từ 1 (hàng A = 1), theo thống nhất với A
 
 // Mã ghế: chữ cái hàng + số ghế, ví dụ "A1", "F10"
 const parseSeat = (seatId) => {
