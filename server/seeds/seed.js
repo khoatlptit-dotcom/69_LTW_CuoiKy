@@ -6,7 +6,6 @@ const Movie = require('../models/Movie');
 const Room = require('../models/Room');
 const Showtime = require('../models/Showtime');
 const Booking = require('../models/Booking');
-const Ticket = require('../models/Ticket');
 const SeatLock = require('../models/SeatLock');
 const moviesData = require('./movies.json');
 
@@ -15,8 +14,7 @@ const placeholder = (title) =>
 
 (async () => {
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User, Movie, Room, Showtime, Booking, Ticket, SeatLock].map((M) => M.deleteMany({})));
-
+    await Promise.all([User, Movie, Room, Showtime, Booking, SeatLock].map((M) => M.deleteMany({})));
   const password = await bcrypt.hash('123456', 10);
   await User.create([
     { name: 'Admin', email: 'admin@cinema.com', password, role: 'admin' },
