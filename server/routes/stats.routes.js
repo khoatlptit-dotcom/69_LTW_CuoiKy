@@ -2,6 +2,8 @@ const router = require('express').Router();
 const ctrl = require('../controllers/stats.controller');
 const { protect, authorize } = require('../middleware/auth');
 
-// TODO: khai báo route cho stats
-router.get('/', ctrl.getAll);
+router.use(protect, authorize('admin'));
+router.get('/revenue-by-movie', ctrl.revenueByMovie);
+router.get('/revenue-by-day', ctrl.revenueByDay);
+
 module.exports = router;
