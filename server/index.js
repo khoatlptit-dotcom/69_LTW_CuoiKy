@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { startSeatLockSweeper } = require('./services/seatLockSweeper');
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
@@ -26,4 +27,5 @@ connectDB().then(() => {
   const httpServer = http.createServer(app);
   initSocket(httpServer);
   httpServer.listen(PORT, () => console.log(`Server chạy cổng ${PORT}`));
+  startSeatLockSweeper();
 });

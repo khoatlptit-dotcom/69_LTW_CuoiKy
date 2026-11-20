@@ -1,8 +1,10 @@
 const Showtime = require('../models/Showtime');
 const Room = require('../models/Room');
-const Ticket = require('../models/Ticket');
+const Booking = require('../models/Booking');
 const SeatLock = require('../models/SeatLock');
 const { MAX_SEATS_PER_BOOKING, getSeatType } = require('../utils/seatMap');
+const { emitSeatEvent } = require('../utils/realtime');
+const { sweepExpiredLocks } = require('./seatLockSweeper');
 
 const HOLD_DURATION_MS = 5 * 60 * 1000;
 
@@ -36,14 +38,15 @@ const normalizeSeats = (seatNumbers) => {
   return seats;
 };
 
-// Ghế đã bán (vé còn hiệu lực) và ghế người khác đang giữ (phiên chưa hết hạn).
+// Ghế đã bán: ghế thuộc các booking còn hiệu lực (confirmed) của suất chiếu.
+const findSoldSeats = (showtimeId) =>
+  Booking.distinct('seats', { showtime: showtimeId, status: 'confirmed' });
+
+// Ghế đã bán và ghế người khác đang giữ (phiên chưa hết hạn).
 const findConflicts = async (showtimeId, userId, seats, now) => {
-  const [soldSeats, otherLocks] = await Promise.all([
-    Ticket.distinct('seatNumber', {
-      showtime: showtimeId,
-      seatNumber: { $in: seats },
-      status: 'valid',
-    }),
+  const wanted = new Set(seats);
+  const [soldAll, otherLocks] = await Promise.all([
+    findSoldSeats(showtimeId),
     SeatLock.find({
       showtime: showtimeId,
       user: { $ne: userId },
@@ -52,13 +55,13 @@ const findConflicts = async (showtimeId, userId, seats, now) => {
     }),
   ]);
 
-  const wanted = new Set(seats);
+  const soldSeats = soldAll.filter((seat) => wanted.has(seat));
   const heldSeats = [
     ...new Set(
       otherLocks.flatMap((lock) => lock.seatNumbers).filter((seat) => wanted.has(seat))
     ),
   ];
-  return { soldSeats: [...soldSeats].sort(), heldSeats: heldSeats.sort() };
+  return { soldSeats: soldSeats.sort(), heldSeats: heldSeats.sort() };
 };
 
 const conflictError = ({ soldSeats, heldSeats }) => {
@@ -90,7 +93,7 @@ const holdSeats = async ({ showtimeId, userId, seatNumbers }) => {
   }
 
   // Dọn phiên đã hết hạn của suất chiếu này để chúng không chặn người khác.
-  await SeatLock.deleteMany({ showtime: showtime._id, expiresAt: { $lte: now } });
+  await sweepExpiredLocks(showtime._id);
 
   const conflicts = await findConflicts(showtime._id, userId, seats, now);
   if (conflicts.soldSeats.length || conflicts.heldSeats.length) {
@@ -99,8 +102,10 @@ const holdSeats = async ({ showtimeId, userId, seatNumbers }) => {
 
   // Giữ nguyên hạn của phiên còn hiệu lực, không reset khi người dùng đổi ghế.
   const own = await SeatLock.findOne({ showtime: showtime._id, user: userId });
-  const expiresAt =
-    own && own.expiresAt > now ? own.expiresAt : new Date(now.getTime() + HOLD_DURATION_MS);
+  const ownActive = own && own.expiresAt > now ? own : null;
+  const expiresAt = ownActive
+    ? ownActive.expiresAt
+    : new Date(now.getTime() + HOLD_DURATION_MS);
 
   try {
     const lock = await SeatLock.findOneAndUpdate(
@@ -108,6 +113,12 @@ const holdSeats = async ({ showtimeId, userId, seatNumbers }) => {
       { $set: { seatNumbers: seats, expiresAt } },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
+
+    // Ghế vừa bỏ chọn được trả lại; ghế vừa chọn được giữ.
+    const freed = ownActive ? ownActive.seatNumbers.filter((seat) => !seats.includes(seat)) : [];
+    if (freed.length) emitSeatEvent(showtime._id, 'seat:released', { seatNumbers: freed });
+    emitSeatEvent(showtime._id, 'seat:held', { seatNumbers: seats });
+
     return { lock, serverTime: now };
   } catch (err) {
     if (err.code === 11000) {
@@ -121,8 +132,9 @@ const holdSeats = async ({ showtimeId, userId, seatNumbers }) => {
 
 const releaseHold = async ({ showtimeId, userId }) => {
   if (!showtimeId) throw httpError(400, 'Thiếu showtimeId');
-  const result = await SeatLock.deleteOne({ showtime: showtimeId, user: userId });
-  return result.deletedCount > 0;
+  const lock = await SeatLock.findOneAndDelete({ showtime: showtimeId, user: userId });
+  if (lock) emitSeatEvent(showtimeId, 'seat:released', { seatNumbers: lock.seatNumbers });
+  return Boolean(lock);
 };
 
 const getMyHold = async ({ showtimeId, userId }) => {
@@ -142,7 +154,7 @@ const getSeatMap = async ({ showtimeId, userId }) => {
   const now = new Date();
 
   const [soldList, locks] = await Promise.all([
-    Ticket.distinct('seatNumber', { showtime: showtime._id, status: 'valid' }),
+    findSoldSeats(showtime._id),
     SeatLock.find({ showtime: showtime._id, expiresAt: { $gt: now } }),
   ]);
 
