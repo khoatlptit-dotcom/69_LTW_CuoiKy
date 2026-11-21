@@ -1,0 +1,306 @@
+.seat-page {
+  --bg: #0f1218;
+  --panel: #171b24;
+  --border: #2a3140;
+  --text: #e8e8ea;
+  --muted: #9aa0ac;
+  --gold: #d4af37;
+  --red: #e5484d;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.seat-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.seat-page__header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.seat-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.seat-page__state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.seat-page__state--error {
+  color: var(--red);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.notice--error {
+  color: #ffd9db;
+  background: rgba(229, 72, 77, 0.15);
+  border-color: var(--red);
+}
+
+/* Sơ đồ ghế */
+.seat-map {
+  padding: 20px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.seat-map__screen {
+  width: 70%;
+  margin: 0 auto 28px;
+  padding: 8px 0;
+  text-align: center;
+  letter-spacing: 0.4em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border-top: 3px solid var(--gold);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background: linear-gradient(to bottom, rgba(212, 175, 55, 0.18), transparent);
+}
+
+.seat-map__rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seat-row__label {
+  width: 18px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.seat-row__seats {
+  display: flex;
+  gap: 6px;
+}
+
+.seat {
+  width: clamp(26px, 4vw, 36px);
+  height: clamp(26px, 4vw, 36px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px 6px 3px 3px;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text);
+  background: #2b3340;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.seat--vip {
+  border-color: var(--gold);
+}
+
+.seat:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.seat--selected {
+  color: #111;
+  font-weight: 700;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.seat--held {
+  color: #f1c27b;
+  background: repeating-linear-gradient(45deg, #5b3a12, #5b3a12 4px, #3f2a0e 4px, #3f2a0e 8px);
+  cursor: not-allowed;
+}
+
+.seat--sold {
+  color: #888;
+  background: #3a1f22;
+  border-color: #4a2a2e;
+  cursor: not-allowed;
+}
+
+.seat:disabled {
+  cursor: not-allowed;
+}
+
+.seat--legend {
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.seat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.seat-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tóm tắt đặt vé */
+.booking-summary {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.booking-summary__title {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+}
+
+.booking-summary__info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+}
+
+.booking-summary__info dt {
+  color: var(--muted);
+}
+
+.booking-summary__info dd {
+  margin: 0;
+}
+
+.booking-summary__empty,
+.booking-summary__breakdown {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.booking-summary__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.chip--vip {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.booking-summary__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 16px 0;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.booking-summary__total strong {
+  font-size: 1.3rem;
+  color: var(--gold);
+}
+
+.booking-summary__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.btn--primary {
+  color: #111;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Đồng hồ đếm ngược */
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+}
+
+.countdown__label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.countdown__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.2rem;
+  color: var(--gold);
+}
+
+.countdown--urgent .countdown__time {
+  color: var(--red);
+}
+
+@media (max-width: 900px) {
+  .seat-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
