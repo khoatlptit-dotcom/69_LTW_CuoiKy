@@ -4,7 +4,7 @@
 .admin-page td a { margin-right: 6px; }
 .date-filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 12px; }
 .date-filter > div { flex: 1 1 160px; }
-.date-filter input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+.date-filter input, .date-filter select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
 .stat-card { padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
 .stat-card span { display: block; font-size: 0.875rem; color: var(--muted); }
