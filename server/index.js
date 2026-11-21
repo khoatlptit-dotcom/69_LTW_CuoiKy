@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { startSeatLockSweeper } = require('./services/seatLockSweeper');
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
@@ -15,6 +16,7 @@ app.use('/api/movies', require('./routes/movie.routes'));
 app.use('/api/rooms', require('./routes/room.routes'));
 app.use('/api/showtimes', require('./routes/showtime.routes'));
 app.use('/api/bookings', require('./routes/booking.routes'));
+app.use('/api/seats', require('./routes/seat.routes'));
 app.use('/api/stats', require('./routes/stats.routes'));
 app.use('/api/admin/bookings', require('./routes/adminBooking.routes'));
 
@@ -26,4 +28,5 @@ connectDB().then(() => {
   const httpServer = http.createServer(app);
   initSocket(httpServer);
   httpServer.listen(PORT, () => console.log(`Server chạy cổng ${PORT}`));
+  startSeatLockSweeper();
 });
