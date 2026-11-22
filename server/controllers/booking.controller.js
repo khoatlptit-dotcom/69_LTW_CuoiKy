@@ -2,8 +2,14 @@ const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Showtime = require("../models/Showtime");
 const User = require("../models/User");
-require("../models/Room"); // dang ky cac model duoc populate (neu khong se loi MissingSchemaError)
+const seatService = require("../services/seatService");
+const { emitSeatEvent } = require("../utils/realtime");
+const { calculateAmount, MAX_SEATS_PER_BOOKING } = require("../utils/seatMap");
+// Đăng ký các model được populate (nếu không sẽ báo lỗi MissingSchemaError)
+require("../models/Room");
 require("../models/Movie");
+
+const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -12,41 +18,114 @@ const parseDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const MAX_SEATS = 8;
-const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
-const FIRST_ROW_INDEX = 1; // Room.vipRows đánh số từ 1 (hàng A = 1), theo thống nhất với A
-
-// Mã ghế: chữ cái hàng + số ghế, ví dụ "A1", "F10"
-const parseSeat = (seatId) => {
-  const match =
-    typeof seatId === "string" ? /^([A-Z])(\d{1,3})$/.exec(seatId) : null;
-  return match
-    ? {
-        row: match[1].charCodeAt(0) - 65 + FIRST_ROW_INDEX,
-        number: Number(match[2]),
-      }
-    : null;
+const showtimePopulate = {
+  path: "showtime",
+  select: "startTime endTime room movie",
+  populate: [
+    { path: "movie", select: "title poster" },
+    { path: "room", select: "name" },
+  ],
 };
 
-const isValidSeat = (room, seatId) => {
-  const seat = parseSeat(seatId);
-  return (
-    Boolean(seat) &&
-    seat.row < FIRST_ROW_INDEX + room.rows &&
-    seat.number >= 1 &&
-    seat.number <= room.seatsPerRow
-  );
-};
+// Đặt vé: người đặt phải đang giữ đủ các ghế (seatService của A), tiền tính ở server
+exports.create = async (req, res, next) => {
+  try {
+    const { showtimeId } = req.body;
+    const rawSeats = req.body.seats;
+    if (!mongoose.isValidObjectId(showtimeId)) {
+      return res.status(400).json({ message: "Suất chiếu không hợp lệ" });
+    }
+    if (
+      !Array.isArray(rawSeats) ||
+      rawSeats.length < 1 ||
+      rawSeats.length > MAX_SEATS_PER_BOOKING ||
+      rawSeats.some((seat) => typeof seat !== "string")
+    ) {
+      return res
+        .status(400)
+        .json({
+          message: `Chọn từ 1 đến ${MAX_SEATS_PER_BOOKING} ghế, không trùng nhau`,
+        });
+    }
+    // Cùng cách chuẩn hóa với seatService của A (cắt khoảng trắng, viết hoa) để so khớp với phiên giữ ghế
+    const seats = rawSeats.map((seat) => seat.trim().toUpperCase());
+    if (new Set(seats).size !== seats.length) {
+      return res
+        .status(400)
+        .json({
+          message: `Chọn từ 1 đến ${MAX_SEATS_PER_BOOKING} ghế, không trùng nhau`,
+        });
+    }
 
-const calcTotal = (showtime, room, seats) =>
-  seats.reduce(
-    (sum, seatId) =>
-      sum +
-      (room.vipRows.includes(parseSeat(seatId).row)
-        ? showtime.priceVip
-        : showtime.priceNormal),
-    0,
-  );
+    const showtime = await Showtime.findById(showtimeId).populate("room");
+    if (!showtime)
+      return res.status(404).json({ message: "Không tìm thấy suất chiếu" });
+    if (!showtime.room)
+      return res.status(404).json({ message: "Không tìm thấy phòng chiếu" });
+    if (showtime.startTime <= new Date()) {
+      return res.status(400).json({ message: "Suất chiếu đã bắt đầu" });
+    }
+
+    // Phiên giữ ghế phải còn hạn và chứa mọi ghế gửi lên (getMyHold trả về { lock, serverTime })
+    const { lock } = await seatService.getMyHold({
+      showtimeId,
+      userId: req.user.id,
+    });
+    const held = new Set(lock ? lock.seatNumbers : []);
+    if (!lock || !seats.every((seat) => held.has(seat))) {
+      return res
+        .status(409)
+        .json({
+          code: "HOLD_INVALID",
+          message: "Phiên giữ ghế đã hết hạn hoặc không khớp",
+        });
+    }
+
+    // Tiền tính ở server bằng hàm của A (trả về { total, details }), không tin số tiền từ client
+    const { total } = calculateAmount(showtime.room, showtime, seats);
+
+    let booking;
+    try {
+      booking = await Booking.create({
+        user: req.user.id,
+        showtime: showtime._id,
+        seats,
+        totalPrice: total,
+      });
+    } catch (err) {
+      if (err.code !== 11000) throw err;
+      const taken = await Booking.find({
+        showtime: showtime._id,
+        status: "confirmed",
+        seats: { $in: seats },
+      }).select("seats");
+      const conflict = seats.filter((seat) =>
+        taken.some((b) => b.seats.includes(seat)),
+      );
+      const list = conflict.length ? conflict : seats;
+      return res.status(409).json({
+        message: `Ghế ${list.join(", ")} đã có người đặt`,
+        seats: list,
+        details: { seats: list },
+      });
+    }
+
+    // Vé đã tạo: xóa phiên giữ ghế và báo realtime. Lỗi ở hai bước này không được làm hỏng vé.
+    try {
+      await seatService.releaseHold({ showtimeId, userId: req.user.id });
+    } catch (err) {
+      console.error("releaseHold lỗi:", err.message);
+    }
+    try {
+      emitSeatEvent(showtimeId, "seat:booked", { seatNumbers: seats });
+    } catch (err) {
+      console.error("emitSeatEvent lỗi:", err.message);
+    }
+    return res.status(201).json(booking);
+  } catch (err) {
+    next(err);
+  }
+};
 
 // Admin: danh sách vé của mọi người. Lọc: status, showtimeId, search (tên hoặc email), from, to
 exports.getAll = async (req, res, next) => {
@@ -92,14 +171,7 @@ exports.getAll = async (req, res, next) => {
         .skip((page - 1) * limit)
         .limit(limit)
         .populate("user", "name email")
-        .populate({
-          path: "showtime",
-          select: "startTime endTime room movie",
-          populate: [
-            { path: "movie", select: "title poster" },
-            { path: "room", select: "name" },
-          ],
-        }),
+        .populate(showtimePopulate),
       Booking.countDocuments(filter),
     ]);
     res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
@@ -108,68 +180,7 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
-exports.create = async (req, res, next) => {
-  try {
-    const { showtimeId, seats } = req.body;
-    if (!mongoose.isValidObjectId(showtimeId)) {
-      return res.status(400).json({ message: "Suất chiếu không hợp lệ" });
-    }
-    if (
-      !Array.isArray(seats) ||
-      seats.length < 1 ||
-      seats.length > MAX_SEATS ||
-      new Set(seats).size !== seats.length
-    ) {
-      return res
-        .status(400)
-        .json({ message: `Chọn từ 1 đến ${MAX_SEATS} ghế, không trùng nhau` });
-    }
-
-    const showtime = await Showtime.findById(showtimeId).populate("room");
-    if (!showtime)
-      return res.status(404).json({ message: "Không tìm thấy suất chiếu" });
-    if (!showtime.room)
-      return res.status(404).json({ message: "Không tìm thấy phòng chiếu" });
-    if (showtime.startTime <= new Date()) {
-      return res.status(400).json({ message: "Suất chiếu đã bắt đầu" });
-    }
-    if (!seats.every((seat) => isValidSeat(showtime.room, seat))) {
-      return res
-        .status(400)
-        .json({ message: "Có ghế không tồn tại trong phòng chiếu" });
-    }
-
-    try {
-      const booking = await Booking.create({
-        user: req.user.id,
-        showtime: showtime._id,
-        seats,
-        totalPrice: calcTotal(showtime, showtime.room, seats), // tính ở server, không tin client
-      });
-      return res.status(201).json(booking);
-    } catch (err) {
-      if (err.code !== 11000) throw err;
-      const taken = await Booking.find({
-        showtime: showtime._id,
-        status: "confirmed",
-        seats: { $in: seats },
-      }).select("seats");
-      const conflict = seats.filter((seat) =>
-        taken.some((b) => b.seats.includes(seat)),
-      );
-      const list = conflict.length ? conflict : seats;
-      return res
-        .status(409)
-        .json({
-          message: `Ghế ${list.join(", ")} đã có người đặt`,
-          seats: list,
-        });
-    }
-  } catch (err) {
-    next(err);
-  }
-};
-
+// Lịch sử vé của người đang đăng nhập
 exports.getMine = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -178,9 +189,8 @@ exports.getMine = async (req, res, next) => {
     if (req.query.status)
       filter.status = { $in: String(req.query.status).split(",") };
     if (req.query.from) {
-      const from = new Date(req.query.from);
-      if (Number.isNaN(from.getTime()))
-        return res.status(400).json({ message: "Ngày không hợp lệ" });
+      const from = parseDate(req.query.from);
+      if (!from) return res.status(400).json({ message: "Ngày không hợp lệ" });
       filter.createdAt = { $gte: from };
     }
 
@@ -189,14 +199,7 @@ exports.getMine = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate({
-          path: "showtime",
-          select: "startTime endTime room movie",
-          populate: [
-            { path: "movie", select: "title poster" },
-            { path: "room", select: "name" },
-          ],
-        }),
+        .populate(showtimePopulate),
       Booking.countDocuments(filter),
     ]);
     res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
@@ -205,6 +208,7 @@ exports.getMine = async (req, res, next) => {
   }
 };
 
+// Hủy vé: chỉ chủ vé, trước giờ chiếu ít nhất 2 tiếng; hủy xong báo realtime để mở lại ghế
 exports.cancel = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -239,6 +243,14 @@ exports.cancel = async (req, res, next) => {
       { new: true },
     );
     if (!updated) return res.status(400).json({ message: "Vé đã được hủy" });
+
+    try {
+      emitSeatEvent(String(booking.showtime._id), "seat:cancelled", {
+        seatNumbers: booking.seats,
+      });
+    } catch (err) {
+      console.error("emitSeatEvent lỗi:", err.message);
+    }
     res.json(updated);
   } catch (err) {
     next(err);
