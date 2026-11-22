@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSeatMap, holdSeats, releaseSeats } from '../api/seatApi';
 import { MAX_SEATS, clearSeats, setSelected, startSession, toggleSeat } from '../store/seatSlice';
+import useShowtimeSocket from '../hooks/useShowtimeSocket';
 import SeatMap from '../components/seat/SeatMap';
 import SeatLegend from '../components/seat/SeatLegend';
 import CountdownTimer from '../components/booking/CountdownTimer';
 import BookingSummary from '../components/booking/BookingSummary';
 import '../styles/seat.css';
+
+const REFRESH_DELAY_MS = 150;
 
 const SeatSelectionPage = () => {
   const { id } = useParams();
@@ -23,10 +26,20 @@ const SeatSelectionPage = () => {
   const [notice, setNotice] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const holdRef = useRef(null); // phiên giữ ghế gần nhất đã biết từ server
+  const busyRef = useRef(false);
+  const refreshTimerRef = useRef(null);
+
+  const setBusyFlag = (value) => {
+    busyRef.current = value;
+    setBusy(value);
+  };
+
   // Server là nguồn dữ liệu chính xác: tải lại sơ đồ và phiên giữ ghế từ server.
   const loadMap = useCallback(async () => {
     const res = await getSeatMap(id);
     const { showtime, room, seats, hold: serverHold, serverTime } = res.data;
+    const previousHold = holdRef.current;
     setData({ showtime, room, seats });
 
     if (serverHold) {
@@ -40,18 +53,31 @@ const SeatSelectionPage = () => {
           }))
         )
       );
+      holdRef.current = { expiresAt: serverHold.expiresAt };
       setHold({
         expiresAt: serverHold.expiresAt,
         offsetMs: new Date(serverTime).getTime() - Date.now(),
       });
-    } else {
-      dispatch(clearSeats());
-      setHold(null);
+      return;
     }
-  }, [id, dispatch]);
+
+    dispatch(clearSeats());
+    setHold(null);
+    holdRef.current = null;
+
+    // Phiên giữ ghế vừa hết hạn trên server (server dọn trước khi đồng hồ về 0):
+    // đưa người dùng về trang phim như khi đồng hồ về 0.
+    if (
+      previousHold &&
+      new Date(previousHold.expiresAt).getTime() <= new Date(serverTime).getTime() + 2000
+    ) {
+      navigate(showtime.movie ? `/movies/${showtime.movie}` : '/', { replace: true });
+    }
+  }, [id, dispatch, navigate]);
 
   useEffect(() => {
     let cancelled = false;
+    holdRef.current = null;
     dispatch(startSession(id));
     setLoading(true);
     setError('');
@@ -69,6 +95,25 @@ const SeatSelectionPage = () => {
     };
   }, [id, dispatch, loadMap, reloadKey]);
 
+  // Cập nhật theo thời gian thực: có người giữ, hủy giữ, đặt vé hoặc hủy vé trong suất chiếu này.
+  const scheduleRefresh = useCallback(() => {
+    if (busyRef.current) return; // thao tác của chính mình sẽ tự tải lại sơ đồ
+    clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => {
+      loadMap().catch(() => {});
+    }, REFRESH_DELAY_MS);
+  }, [loadMap]);
+
+  useEffect(() => () => clearTimeout(refreshTimerRef.current), []);
+
+  useShowtimeSocket(id, {
+    'seat:held': scheduleRefresh,
+    'seat:released': scheduleRefresh,
+    'seat:booked': scheduleRefresh,
+    'seat:cancelled': scheduleRefresh,
+    onConnect: scheduleRefresh,
+  });
+
   const selectedIds = useMemo(() => new Set(selected.map((seat) => seat.id)), [selected]);
   const total = useMemo(() => selected.reduce((sum, seat) => sum + seat.price, 0), [selected]);
 
@@ -76,6 +121,7 @@ const SeatSelectionPage = () => {
   const handleExpire = useCallback(() => {
     dispatch(clearSeats());
     setHold(null);
+    holdRef.current = null;
     navigate(movieId ? `/movies/${movieId}` : '/', { replace: true });
   }, [dispatch, navigate, movieId]);
 
@@ -95,7 +141,7 @@ const SeatSelectionPage = () => {
 
     dispatch(toggleSeat(item));
     setNotice(null);
-    setBusy(true);
+    setBusyFlag(true);
     try {
       if (nextIds.length === 0) await releaseSeats(id);
       else await holdSeats(id, nextIds);
@@ -108,21 +154,21 @@ const SeatSelectionPage = () => {
         /* giữ nguyên thông báo lỗi ở trên */
       }
     } finally {
-      setBusy(false);
+      setBusyFlag(false);
     }
   };
 
   const handleClear = async () => {
     if (busy) return;
     setNotice(null);
-    setBusy(true);
+    setBusyFlag(true);
     try {
       await releaseSeats(id);
       await loadMap();
     } catch (err) {
       setNotice({ type: 'error', text: err.message || 'Không hủy được phiên giữ ghế' });
     } finally {
-      setBusy(false);
+      setBusyFlag(false);
     }
   };
 
