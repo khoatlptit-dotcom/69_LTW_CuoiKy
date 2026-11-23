@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Showtime = require("../models/Showtime");
-const User = require("../models/User");
 const seatService = require("../services/seatService");
 const { emitSeatEvent } = require("../utils/realtime");
 const { calculateAmount, MAX_SEATS_PER_BOOKING } = require("../utils/seatMap");
@@ -10,8 +9,6 @@ require("../models/Room");
 require("../models/Movie");
 
 const CANCEL_BEFORE_MS = 2 * 60 * 60 * 1000;
-
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const parseDate = (value) => {
   const date = new Date(value);
@@ -122,59 +119,6 @@ exports.create = async (req, res, next) => {
       console.error("emitSeatEvent lỗi:", err.message);
     }
     return res.status(201).json(booking);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Admin: danh sách vé của mọi người. Lọc: status, showtimeId, search (tên hoặc email), from, to
-exports.getAll = async (req, res, next) => {
-  try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
-    const { status, showtimeId, search, from, to } = req.query;
-    const filter = {};
-
-    if (status) filter.status = { $in: String(status).split(",") };
-    if (showtimeId) {
-      if (!mongoose.isValidObjectId(showtimeId)) {
-        return res.status(400).json({ message: "Suất chiếu không hợp lệ" });
-      }
-      filter.showtime = showtimeId;
-    }
-    if (from || to) {
-      filter.createdAt = {};
-      if (from) {
-        const date = parseDate(from);
-        if (!date)
-          return res.status(400).json({ message: "Ngày không hợp lệ" });
-        filter.createdAt.$gte = date;
-      }
-      if (to) {
-        const date = parseDate(to);
-        if (!date)
-          return res.status(400).json({ message: "Ngày không hợp lệ" });
-        filter.createdAt.$lte = date;
-      }
-    }
-    if (search) {
-      const regex = new RegExp(escapeRegex(String(search)), "i");
-      const users = await User.find({
-        $or: [{ name: regex }, { email: regex }],
-      }).select("_id");
-      filter.user = { $in: users.map((u) => u._id) };
-    }
-
-    const [items, total] = await Promise.all([
-      Booking.find(filter)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .populate("user", "name email")
-        .populate(showtimePopulate),
-      Booking.countDocuments(filter),
-    ]);
-    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }
