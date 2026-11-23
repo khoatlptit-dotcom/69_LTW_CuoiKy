@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSeatMap, holdSeats, releaseSeats } from '../api/seatApi';
+import { createBooking } from '../api/bookingApi';
 import { MAX_SEATS, clearSeats, setSelected, startSession, toggleSeat } from '../store/seatSlice';
 import useShowtimeSocket from '../hooks/useShowtimeSocket';
 import SeatMap from '../components/seat/SeatMap';
@@ -171,6 +172,36 @@ const SeatSelectionPage = () => {
       setBusyFlag(false);
     }
   };
+    const handleConfirm = async () => {
+    if (busy || selected.length === 0) return;
+    setNotice(null);
+    setBusyFlag(true);
+    try {
+      await createBooking(
+        id,
+        selected.map((seat) => seat.id)
+      );
+      dispatch(clearSeats());
+      setHold(null);
+      holdRef.current = null;
+      navigate('/my-tickets', { replace: true });
+    } catch (err) {
+      const conflictSeats = err.data?.seats || err.data?.details?.seats;
+      setNotice({
+        type: 'error',
+        text: conflictSeats?.length
+          ? `Ghế ${conflictSeats.join(', ')} đã có người đặt`
+          : err.message || 'Không đặt được vé',
+      });
+      try {
+        await loadMap();
+      } catch {
+        /* giữ nguyên thông báo lỗi ở trên */
+      }
+    } finally {
+      setBusyFlag(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -228,6 +259,7 @@ const SeatSelectionPage = () => {
           maxSeats={MAX_SEATS}
           busy={busy}
           onClear={handleClear}
+                    onConfirm={handleConfirm}
         />
       </div>
     </main>
