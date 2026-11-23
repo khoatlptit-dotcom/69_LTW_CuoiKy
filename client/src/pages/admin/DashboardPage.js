@@ -16,6 +16,7 @@ const DashboardPage = () => {
   const [range, setRange] = useState({ from: daysAgo(29), to: daysAgo(0) });
   const byMovie = useFetch(() => statsApi.revenueByMovie(range), [range]);
   const byDay = useFetch(() => statsApi.revenueByDay(range), [range]);
+  const overview = useFetch(() => statsApi.overview(), []);
 
   const totals = useMemo(
     () =>
@@ -34,7 +35,7 @@ const DashboardPage = () => {
     setRange((prev) => ({ ...prev, [name]: value }));
   };
 
-  const failed = [byMovie, byDay].find((r) => r.error && !r.data);
+  const failed = [byMovie, byDay, overview].find((r) => r.error && !r.data);
   const loading = byMovie.loading || byDay.loading;
 
   return (
@@ -53,6 +54,8 @@ const DashboardPage = () => {
       {failed && <p role="alert" className="error-text">{failed.error.message}</p>}
       {loading && <p>Đang tải...</p>}
       <div className="stat-grid">
+        <StatCard label="Tổng số phim" value={overview.data?.movies ?? '...'} />
+<StatCard label="Tổng thành viên" value={overview.data?.members ?? '...'} />
         <StatCard label="Tổng doanh thu" value={formatPrice(totals.revenue)} />
         <StatCard label="Số ghế đã bán" value={totals.seats} />
         <StatCard label="Lượt đặt vé" value={totals.bookings} />
