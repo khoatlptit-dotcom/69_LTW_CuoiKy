@@ -30,7 +30,7 @@ const ManageShowtimesPage = () => {
   return (
     <section className="admin-page">
       <h1>Quản lý suất chiếu</h1>
-      <p><Link to="new">+ Thêm suất chiếu</Link></p>
+   <p><Link to="new" className="btn-add">+ Thêm suất chiếu</Link></p>
       <div className="date-filter">
         <div>
           <label htmlFor="date">Ngày chiếu</label>
