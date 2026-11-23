@@ -15,6 +15,8 @@ const placeholder = (title) =>
 (async () => {
   await mongoose.connect(process.env.MONGO_URI);
     await Promise.all([User, Movie, Room, Showtime, Booking, SeatLock].map((M) => M.deleteMany({})));
+      // Đồng bộ lại index (xóa index cũ sai điều kiện, tạo lại index đúng theo schema)
+  await Promise.all([Booking, SeatLock].map((M) => M.syncIndexes()));
   const password = await bcrypt.hash('123456', 10);
   await User.create([
     { name: 'Admin', email: 'admin@cinema.com', password, role: 'admin' },
