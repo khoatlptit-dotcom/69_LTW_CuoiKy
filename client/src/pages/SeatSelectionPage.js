@@ -1,13 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getSeatMap, holdSeats, releaseSeats } from '../api/seatApi';
-import { MAX_SEATS, clearSeats, setSelected, startSession, toggleSeat } from '../store/seatSlice';
-import SeatMap from '../components/seat/SeatMap';
-import SeatLegend from '../components/seat/SeatLegend';
-import CountdownTimer from '../components/booking/CountdownTimer';
-import BookingSummary from '../components/booking/BookingSummary';
-import '../styles/seat.css';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { getSeatMap, holdSeats, releaseSeats } from "../api/seatApi";
+import { createBooking } from "../api/bookingApi";
+import {
+  MAX_SEATS,
+  clearSeats,
+  setSelected,
+  startSession,
+  toggleSeat,
+} from "../store/seatSlice";
+import SeatMap from "../components/seat/SeatMap";
+import SeatLegend from "../components/seat/SeatLegend";
+import CountdownTimer from "../components/booking/CountdownTimer";
+import BookingSummary from "../components/booking/BookingSummary";
+import "../styles/seat.css";
 
 const SeatSelectionPage = () => {
   const { id } = useParams();
@@ -18,7 +25,7 @@ const SeatSelectionPage = () => {
   const [data, setData] = useState(null); // { showtime, room, seats }
   const [hold, setHold] = useState(null); // { expiresAt, offsetMs }
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -35,10 +42,10 @@ const SeatSelectionPage = () => {
         setSelected(
           serverHold.seatNumbers.map((seatNumber) => ({
             id: seatNumber,
-            type: byId.get(seatNumber)?.type ?? 'normal',
+            type: byId.get(seatNumber)?.type ?? "normal",
             price: byId.get(seatNumber)?.price ?? 0,
-          }))
-        )
+          })),
+        ),
       );
       setHold({
         expiresAt: serverHold.expiresAt,
@@ -54,11 +61,11 @@ const SeatSelectionPage = () => {
     let cancelled = false;
     dispatch(startSession(id));
     setLoading(true);
-    setError('');
+    setError("");
 
     loadMap()
       .catch((err) => {
-        if (!cancelled) setError(err.message || 'Không tải được sơ đồ ghế');
+        if (!cancelled) setError(err.message || "Không tải được sơ đồ ghế");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -69,14 +76,20 @@ const SeatSelectionPage = () => {
     };
   }, [id, dispatch, loadMap, reloadKey]);
 
-  const selectedIds = useMemo(() => new Set(selected.map((seat) => seat.id)), [selected]);
-  const total = useMemo(() => selected.reduce((sum, seat) => sum + seat.price, 0), [selected]);
+  const selectedIds = useMemo(
+    () => new Set(selected.map((seat) => seat.id)),
+    [selected],
+  );
+  const total = useMemo(
+    () => selected.reduce((sum, seat) => sum + seat.price, 0),
+    [selected],
+  );
 
   const movieId = data?.showtime?.movie;
   const handleExpire = useCallback(() => {
     dispatch(clearSeats());
     setHold(null);
-    navigate(movieId ? `/movies/${movieId}` : '/', { replace: true });
+    navigate(movieId ? `/movies/${movieId}` : "/", { replace: true });
   }, [dispatch, navigate, movieId]);
 
   const handleToggle = async (seat) => {
@@ -84,7 +97,10 @@ const SeatSelectionPage = () => {
 
     const exists = selected.some((item) => item.id === seat.seatNumber);
     if (!exists && selected.length >= MAX_SEATS) {
-      setNotice({ type: 'error', text: `Chỉ được chọn tối đa ${MAX_SEATS} ghế` });
+      setNotice({
+        type: "error",
+        text: `Chỉ được chọn tối đa ${MAX_SEATS} ghế`,
+      });
       return;
     }
 
@@ -101,7 +117,7 @@ const SeatSelectionPage = () => {
       else await holdSeats(id, nextIds);
       await loadMap();
     } catch (err) {
-      setNotice({ type: 'error', text: err.message || 'Không giữ được ghế' });
+      setNotice({ type: "error", text: err.message || "Không giữ được ghế" });
       try {
         await loadMap(); // trả lại đúng trạng thái trên server
       } catch {
@@ -120,7 +136,78 @@ const SeatSelectionPage = () => {
       await releaseSeats(id);
       await loadMap();
     } catch (err) {
-      setNotice({ type: 'error', text: err.message || 'Không hủy được phiên giữ ghế' });
+      setNotice({
+        type: "error",
+        text: err.message || "Không hủy được phiên giữ ghế",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (busy || selected.length === 0) return;
+
+    setNotice(null);
+    setBusy(true);
+    try {
+      await createBooking(
+        id,
+        selected.map((seat) => seat.id),
+      );
+      // Server đã xóa phiên giữ ghế và phát seat:booked nên không cần releaseSeats.
+      dispatch(clearSeats());
+      setHold(null); // dừng đồng hồ đếm ngược
+      navigate("/my-tickets", { replace: true });
+      return;
+    } catch (err) {
+      const status = err.status;
+
+      if (status === 401) return; // AuthContext tự đăng xuất, ProtectedRoute đưa về /login
+
+      if (status === 409 && err.data?.code === "HOLD_INVALID") {
+        setNotice({
+          type: "error",
+          text: "Phiên giữ ghế đã hết hạn, vui lòng chọn lại",
+        });
+        dispatch(clearSeats());
+        setHold(null);
+      } else if (status === 409 && Array.isArray(err.data?.seats)) {
+        const taken = err.data.seats.map((s) =>
+          typeof s === "string" ? s : s.seatNumber,
+        );
+        setNotice({
+          type: "error",
+          text: `Ghế ${taken.join(", ")} đã có người đặt`,
+        });
+        dispatch(
+          setSelected(selected.filter((seat) => !taken.includes(seat.id))),
+        );
+      } else if (status === 403) {
+        setNotice({
+          type: "error",
+          text: "Chỉ tài khoản thành viên mới đặt vé được",
+        });
+      } else if (status === 400) {
+        setNotice({
+          type: "error",
+          text: err.message || "Yêu cầu không hợp lệ",
+        });
+      } else if (!status) {
+        setNotice({
+          type: "error",
+          text: "Mất kết nối. Vui lòng kiểm tra mục Vé của tôi trước khi đặt lại",
+        });
+        return; // mất mạng thì không tải lại sơ đồ
+      } else {
+        setNotice({ type: "error", text: err.message || "Đặt vé thất bại" });
+      }
+
+      try {
+        await loadMap(); // đồng bộ lại sơ đồ và phiên giữ ghế từ server
+      } catch {
+        /* giữ nguyên thông báo lỗi ở trên */
+      }
     } finally {
       setBusy(false);
     }
@@ -139,7 +226,11 @@ const SeatSelectionPage = () => {
       <main className="seat-page">
         <div className="seat-page__state seat-page__state--error" role="alert">
           <p>{error}</p>
-          <button type="button" className="btn btn--primary" onClick={() => setReloadKey((k) => k + 1)}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
             Thử lại
           </button>
         </div>
@@ -159,7 +250,11 @@ const SeatSelectionPage = () => {
     <main className="seat-page">
       <header className="seat-page__header">
         <h1>Chọn ghế</h1>
-        <CountdownTimer expiresAt={hold?.expiresAt} offsetMs={hold?.offsetMs} onExpire={handleExpire} />
+        <CountdownTimer
+          expiresAt={hold?.expiresAt}
+          offsetMs={hold?.offsetMs}
+          onExpire={handleExpire}
+        />
       </header>
 
       {notice && (
@@ -170,7 +265,12 @@ const SeatSelectionPage = () => {
 
       <div className="seat-page__layout">
         <section className="seat-page__map">
-          <SeatMap seats={data.seats} selectedIds={selectedIds} disabled={busy} onToggle={handleToggle} />
+          <SeatMap
+            seats={data.seats}
+            selectedIds={selectedIds}
+            disabled={busy}
+            onToggle={handleToggle}
+          />
           <SeatLegend />
         </section>
 
@@ -182,6 +282,7 @@ const SeatSelectionPage = () => {
           maxSeats={MAX_SEATS}
           busy={busy}
           onClear={handleClear}
+          onConfirm={handleConfirm}
         />
       </div>
     </main>
