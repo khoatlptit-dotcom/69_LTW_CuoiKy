@@ -1,80 +1,101 @@
 [
   {
-    "title": "Hành Trình Về Phương Nam",
-    "genres": ["Phiêu lưu", "Gia đình"],
-    "duration": 112,
+    "title": "Mai",
+    "genres": ["Tình cảm", "Chính kịch"],
+    "duration": 131,
     "status": "now",
-    "trailerUrl": "https://www.youtube.com/watch?v=gihuep9BNSg",
-    "description": "Cuộc hành trình của hai anh em xuyên qua miền Tây sông nước."
+    "poster": "/posters/p1.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=EX6clvId19s",
+    "description": "Câu chuyện về cuộc đời một người phụ nữ làm nghề massage và mối tình bất ngờ của cô."
   },
   {
-    "title": "Đêm Không Trăng",
-    "genres": ["Kinh dị"],
-    "duration": 98,
+    "title": "Đào, Phở Và Piano",
+    "genres": ["Chính kịch"],
+    "duration": 100,
     "status": "now",
-    "description": "Một nhóm bạn mắc kẹt trong ngôi nhà cổ giữa đêm tối."
+    "poster": "/posters/p2.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=qn1t_biQigc",
+    "description": "Hà Nội cuối năm 1946, những ngày đầu toàn quốc kháng chiến, qua câu chuyện của một chàng trai và cây đàn piano."
   },
   {
-    "title": "Mật Mã Sài Gòn",
-    "genres": ["Hành động", "Hình sự"],
-    "duration": 125,
-    "status": "now",
-    "description": "Cuộc truy lùng băng nhóm đánh cắp dữ liệu giữa lòng thành phố."
-  },
-  {
-    "title": "Mùa Hè Của Chúng Ta",
-    "genres": ["Tình cảm", "Học đường"],
-    "duration": 105,
-    "status": "now",
-    "description": "Câu chuyện thanh xuân của nhóm bạn trong mùa hè cuối cấp."
-  },
-  {
-    "title": "Tiệm Mì Ông Tư",
-    "genres": ["Hài", "Gia đình"],
-    "duration": 95,
-    "status": "now",
-    "description": "Tiệm mì nhỏ đứng trước nguy cơ bị giải tỏa."
-  },
-  {
-    "title": "Vùng Đất Quên Lãng",
-    "genres": ["Khoa học viễn tưởng"],
+    "title": "Lật Mặt 7: Một Điều Ước",
+    "genres": ["Gia đình", "Chính kịch"],
     "duration": 138,
     "status": "now",
-    "description": "Đoàn thám hiểm tìm thấy một hành tinh có dấu vết của loài người."
+    "poster": "/posters/p3.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=QdtPQ0wV53M",
+    "description": "Câu chuyện gia đình xoay quanh người mẹ già và năm người con đã trưởng thành."
   },
   {
-    "title": "Cánh Cửa Thứ Mười Ba",
-    "genres": ["Kinh dị", "Bí ẩn"],
+    "title": "Nhà Bà Nữ",
+    "genres": ["Hài", "Gia đình"],
     "duration": 102,
     "status": "now",
-    "description": "Tòa chung cư không có tầng 13 và những chuyện lạ xảy ra ở đó."
+    "poster": "/posters/p4.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=IkaP0KJWTsQ",
+    "description": "Gia đình ba thế hệ sống chung dưới một mái nhà và những mâu thuẫn xoay quanh quán bánh canh."
   },
   {
-    "title": "Người Giữ Ngọn Hải Đăng",
-    "genres": ["Chính kịch"],
-    "duration": 118,
+    "title": "Kung Fu Panda 4",
+    "genres": ["Hoạt hình", "Hài"],
+    "duration": 94,
     "status": "now",
-    "description": "Một người đàn ông sống cô độc và bí mật của ngọn hải đăng cũ."
+    "poster": "/posters/p5.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=_inKs4eeHiI",
+    "description": "Po phải chọn người kế nhiệm danh hiệu Thần Long Đại Hiệp và đối đầu một kẻ thù mới."
   },
   {
-    "title": "Tốc Độ Bão Táp",
-    "genres": ["Hành động"],
-    "duration": 110,
-    "status": "upcoming",
-    "description": "Tay đua trở lại giải đấu lớn nhất sau nhiều năm giải nghệ."
-  },
-  {
-    "title": "Giấc Mơ Pha Lê",
+    "title": "Inside Out 2",
     "genres": ["Hoạt hình", "Gia đình"],
-    "duration": 92,
-    "status": "upcoming",
-    "description": "Cô bé tìm thấy thế giới pha lê sau tấm gương trong phòng mình."
+    "duration": 96,
+    "status": "now",
+    "poster": "/posters/p6.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=LEjhY15eCx0",
+    "description": "Riley bước vào tuổi thiếu niên và những cảm xúc mới xuất hiện trong đầu cô bé."
   },
   {
-    "title": "Thanh Xuân Không Ngủ",
-    "genres": ["Tình cảm", "Hài"],
-    "duration": 100,
+    "title": "Dune: Part Two",
+    "genres": ["Khoa học viễn tưởng", "Phiêu lưu"],
+    "duration": 166,
+    "status": "now",
+    "poster": "/posters/p7.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=Way9Dexny3w",
+    "description": "Paul Atreides cùng người Fremen trả thù và đối diện với số phận của mình."
+  },
+  {
+    "title": "Deadpool & Wolverine",
+    "genres": ["Hành động", "Hài"],
+    "duration": 128,
+    "status": "now",
+    "poster": "/posters/p8.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=73_1biulkYk",
+    "description": "Deadpool hợp tác cùng Wolverine trong một nhiệm vụ lớn."
+  },
+  {
+    "title": "Oppenheimer",
+    "genres": ["Chính kịch"],
+    "duration": 180,
     "status": "upcoming",
-    "description": "Những đêm thức trắng của nhóm bạn trẻ khởi nghiệp."
+    "poster": "/posters/p9.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=uYPbbksJxIg",
+    "description": "Câu chuyện về nhà vật lý J. Robert Oppenheimer và Dự án Manhattan."
+  },
+  {
+    "title": "Spider-Man: Across the Spider-Verse",
+    "genres": ["Hoạt hình", "Hành động"],
+    "duration": 140,
+    "status": "upcoming",
+    "poster": "/posters/p10.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=cqGjhVJWtEg",
+    "description": "Miles Morales gặp lại Gwen và đối mặt với các Người Nhện đến từ nhiều vũ trụ."
+  },
+  {
+    "title": "Godzilla x Kong: The New Empire",
+    "genres": ["Hành động", "Khoa học viễn tưởng"],
+    "duration": 115,
+    "status": "upcoming",
+    "poster": "/posters/p11.jpg",
+    "trailerUrl": "https://www.youtube.com/watch?v=lV1OOlGwExM",
+    "description": "Godzilla và Kong hợp sức chống lại một mối đe dọa mới từ lòng đất."
   }
 ]
