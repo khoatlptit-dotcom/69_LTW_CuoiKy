@@ -55,7 +55,7 @@ const MovieDetailPage = () => {
 
   return (
     <div className="movie-detail">
-      <Link to="/">← Quay lại danh sách</Link>
+      <Link to="/" className="btn-back">← Quay lại danh sách</Link>
 
       <h2>{movie.title}</h2>
       <img src={movie.poster} alt={movie.title} />
