@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getById } from '../api/movieApi';
+import ShowtimeList from '../components/movie/ShowtimeList';
 
 // Đổi link YouTube bất kỳ (watch?v=, youtu.be/, embed/) thành link nhúng
 const getYoutubeEmbed = (url) => {
@@ -65,6 +66,7 @@ const MovieDetailPage = () => {
       <p>{movie.description}</p>
 
       <h3>Trailer</h3>
+      <ShowtimeList movieId={movie._id} />
       {embedUrl ? (
         <iframe
           src={embedUrl}

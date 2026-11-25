@@ -1,4 +1,6 @@
 const Booking = require('../models/Booking');
+const Movie = require('../models/Movie');
+const User = require('../models/User');
 
 const TZ = 'Asia/Ho_Chi_Minh';
 
@@ -42,3 +44,14 @@ exports.revenueByDay = runStats([
   { $project: { _id: 0, date: '$_id', revenue: 1, seats: 1, bookings: 1 } },
   { $sort: { date: 1 } },
 ]);
+exports.overview = async (req, res, next) => {
+  try {
+    const [movies, members] = await Promise.all([
+      Movie.countDocuments(),
+      User.countDocuments({ role: 'member' }),
+    ]);
+    res.json({ movies, members });
+  } catch (err) {
+    next(err);
+  }
+};

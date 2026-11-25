@@ -15,8 +15,10 @@ import DashboardPage from "./pages/admin/DashboardPage";
 import ManageMoviesPage from "./pages/admin/ManageMoviesPage";
 import ManageRoomsPage from "./pages/admin/ManageRoomsPage";
 import ManageShowtimesPage from "./pages/admin/ManageShowtimesPage";
+import ManageBookingsPage from "./pages/admin/ManageBookingsPage";
 import ShowtimeFormPage from "./pages/admin/ShowtimeFormPage";
 import ManageUsersPage from "./pages/admin/ManageUsersPage";
+
 const App = () => (
   <Routes>
     <Route element={<MainLayout />}>
@@ -37,6 +39,7 @@ const App = () => (
         <Route path="movies" element={<ManageMoviesPage />} />
         <Route path="rooms" element={<ManageRoomsPage />} />
         <Route path="showtimes" element={<ManageShowtimesPage />} />
+        <Route path="bookings" element={<ManageBookingsPage />} />
         <Route path="showtimes/new" element={<ShowtimeFormPage />} />
         <Route path="showtimes/:id/edit" element={<ShowtimeFormPage />} />
         <Route path="users" element={<ManageUsersPage />} />
