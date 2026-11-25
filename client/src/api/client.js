@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Build production (triển khai): gọi cùng địa chỉ với trang web. Khi phát triển: dùng REACT_APP_API_URL hoặc cổng 5000.
+const API_URL =
+  process.env.NODE_ENV === 'production'
+    ? '/api'
+    : process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export const api = axios.create({
   baseURL: API_URL,
