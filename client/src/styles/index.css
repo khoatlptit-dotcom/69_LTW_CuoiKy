@@ -59,3 +59,4 @@ footer { text-align: center; padding: 16px; color: var(--muted); border-top: 1px
 .admin-page table { border-collapse: collapse; width: 100%; min-width: 520px; background: var(--card); }
 .admin-page th, .admin-page td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; }
 .admin-page td button { margin-right: 6px; }
+header nav span { color: white; }
