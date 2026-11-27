@@ -116,7 +116,9 @@
   color: var(--text);
   background: #2b3340;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
 }
 
 .seat--vip {
@@ -136,7 +138,13 @@
 
 .seat--held {
   color: #f1c27b;
-  background: repeating-linear-gradient(45deg, #5b3a12, #5b3a12 4px, #3f2a0e 4px, #3f2a0e 8px);
+  background: repeating-linear-gradient(
+    45deg,
+    #5b3a12,
+    #5b3a12 4px,
+    #3f2a0e 4px,
+    #3f2a0e 8px
+  );
   cursor: not-allowed;
 }
 
@@ -303,4 +311,56 @@
   .seat-page__layout {
     grid-template-columns: 1fr;
   }
+}
+.payment-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.payment-modal__box {
+  background: #fff;
+  color: #111;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+}
+.payment-modal__qr {
+  width: 260px;
+  max-width: 100%;
+  margin: 12px auto;
+  display: block;
+}
+.payment-modal__box {
+  position: relative;
+}
+.payment-modal__close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+.payment-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.payment-modal__error {
+  color: #c0392b;
+}
+.payment-modal__hint {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  opacity: 0.7;
 }
