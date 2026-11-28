@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { getSeatMap, holdSeats, releaseSeats } from "../api/seatApi";
-import { createBooking } from "../api/bookingApi";
+import { createBooking, cancelBooking } from "../api/bookingApi";
 import {
   MAX_SEATS,
   clearSeats,
@@ -16,6 +16,7 @@ import SeatLegend from "../components/seat/SeatLegend";
 import CountdownTimer from "../components/booking/CountdownTimer";
 import BookingSummary from "../components/booking/BookingSummary";
 import "../styles/seat.css";
+import PaymentQRModal from "../components/booking/PaymentQRModal";
 
 const REFRESH_DELAY_MS = 150;
 
@@ -32,6 +33,8 @@ const SeatSelectionPage = () => {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [paymentBooking, setPaymentBooking] = useState(null);
+  const [paymentError, setPaymentError] = useState("");
 
   const holdRef = useRef(null); // phiên giữ ghế gần nhất đã biết từ server
   const busyRef = useRef(false);
@@ -198,14 +201,15 @@ const SeatSelectionPage = () => {
     setNotice(null);
     setBusyFlag(true);
     try {
-      await createBooking(
+      const booking = await createBooking(
         id,
         selected.map((seat) => seat.id),
       );
       dispatch(clearSeats());
       setHold(null);
       holdRef.current = null;
-      navigate("/my-tickets", { replace: true });
+      setPaymentBooking(booking);
+      return;
     } catch (err) {
       const conflictSeats = err.data?.seats || err.data?.details?.seats;
       setNotice({
@@ -221,6 +225,20 @@ const SeatSelectionPage = () => {
       }
     } finally {
       setBusyFlag(false);
+    }
+  };
+  const handleCancelPayment = async () => {
+    if (!paymentBooking || busy) return;
+    setPaymentError("");
+    setBusy(true);
+    try {
+      await cancelBooking(paymentBooking._id);
+      setPaymentBooking(null);
+      setReloadKey((k) => k + 1); // tải lại sơ đồ ghế, ghế đã nhả
+    } catch (err) {
+      setPaymentError(err.message || "Không hủy được vé");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -296,6 +314,15 @@ const SeatSelectionPage = () => {
           onConfirm={handleConfirm}
         />
       </div>
+      {paymentBooking && (
+        <PaymentQRModal
+          booking={paymentBooking}
+          busy={busy}
+          error={paymentError}
+          onDone={() => navigate("/my-tickets", { replace: true })}
+          onCancel={handleCancelPayment}
+        />
+      )}
     </main>
   );
 };
